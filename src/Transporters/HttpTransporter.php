@@ -50,7 +50,7 @@ final class HttpTransporter implements TransporterContract
 
         $response = $this->sendRequest(fn (): \Psr\Http\Message\ResponseInterface => $this->client->sendRequest($request));
 
-        $contents = (string) $response->getBody();
+        $contents = $this->getContents($response);
 
         $this->throwIfRateLimit($response);
         $this->throwIfJsonError($response, $contents);
@@ -102,7 +102,7 @@ final class HttpTransporter implements TransporterContract
 
         $response = $this->sendRequest(fn (): \Psr\Http\Message\ResponseInterface => $this->client->sendRequest($request));
 
-        $contents = (string) $response->getBody();
+        $contents = $this->getContents($response);
 
         $this->throwIfRateLimit($response);
         $this->throwIfJsonError($response, $contents);
@@ -136,6 +136,11 @@ final class HttpTransporter implements TransporterContract
 
             throw new TransporterException($clientException);
         }
+    }
+
+    private function getContents(ResponseInterface $response): string
+    {
+        return (string) $response->getBody();
     }
 
     private function throwIfRateLimit(ResponseInterface $response): void
