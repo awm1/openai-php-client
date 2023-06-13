@@ -48,13 +48,13 @@ final class HttpTransporter implements TransporterContract
 
         $response = $this->sendRequest(fn (): \Psr\Http\Message\ResponseInterface => $this->client->sendRequest($request));
 
-        $contents = $response->getBody()->getContents();
+        $contents = $this->getContents($response);
 
         if (str_contains($response->getHeaderLine('Content-Type'), ContentType::TEXT_PLAIN->value)) {
             return Response::from($contents, $response->getHeaders());
         }
 
-        $this->throwIfJsonError($response, $contents);
+        $this->throwIfJsonError($response);
 
         try {
             /** @var array{error?: array{message: string, type: string, code: string}} $data */
@@ -75,9 +75,9 @@ final class HttpTransporter implements TransporterContract
 
         $response = $this->sendRequest(fn (): \Psr\Http\Message\ResponseInterface => $this->client->sendRequest($request));
 
-        $contents = $response->getBody()->getContents();
+        $contents = $this->getContents($response);
 
-        $this->throwIfJsonError($response, $contents);
+        $this->throwIfJsonError($response);
 
         return $contents;
     }
@@ -91,7 +91,7 @@ final class HttpTransporter implements TransporterContract
 
         $response = $this->sendRequest(fn () => ($this->streamHandler)($request));
 
-        $this->throwIfJsonError($response, $response);
+        $this->throwIfJsonError($response);
 
         return $response;
     }
@@ -102,14 +102,19 @@ final class HttpTransporter implements TransporterContract
             return $callable();
         } catch (ClientExceptionInterface $clientException) {
             if ($clientException instanceof ClientException) {
-                $this->throwIfJsonError($clientException->getResponse(), $clientException->getResponse()->getBody()->getContents());
+                $this->throwIfJsonError($clientException->getResponse());
             }
 
             throw new TransporterException($clientException);
         }
     }
 
-    private function throwIfJsonError(ResponseInterface $response, string|ResponseInterface $contents): void
+    private function getContents(ResponseInterface $response): string
+    {
+        return (string) $response->getBody();
+    }
+
+    private function throwIfJsonError(ResponseInterface $response): void
     {
         if ($response->getStatusCode() < 400) {
             return;
