@@ -124,11 +124,8 @@ final class HttpTransporter implements TransporterContract
             return;
         }
 
+        $contents = $this->getContents($response);
         $statusCode = $response->getStatusCode();
-
-        if ($contents instanceof ResponseInterface) {
-            $contents = $contents->getBody()->getContents();
-        }
 
         try {
             /** @var array{error?: array{message: string|array<int, string>, type: string, code: string}} $response */
